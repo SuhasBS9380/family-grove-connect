@@ -364,7 +364,7 @@ const Dashboard = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading user data...</p>
@@ -374,49 +374,56 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-primary">
-      {/* Header */}
-      <div className="bg-gradient-card/80 backdrop-blur-xl p-6 shadow-card border-b border-border/20 sticky top-0 z-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Avatar className="w-14 h-14 border-3 border-primary/30 shadow-button">
-              <AvatarImage src={user.profilePicture} />
-              <AvatarFallback className="bg-gradient-secondary text-primary-foreground font-bold text-lg">
-                {user.firstName[0]}{user.lastName[0]}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-foreground font-bold text-lg">
-                Hi {user.firstName}! 👋
-              </p>
-              <p className="text-muted-foreground text-sm">Welcome to your family</p>
+    <div className="min-h-screen bg-background">
+      {/* Beautiful Blue Gradient Header */}
+      <header className="bg-gradient-primary text-white shadow-lg relative overflow-hidden">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill=%22none%22 fill-rule=%22evenodd%22%3E%3Cg fill=%22%23ffffff%22 fill-opacity=%220.05%22%3E%3Ccircle cx=%227%22 cy=%227%22 r=%227%22/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-20"></div>
+        <div className="relative px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                <span className="text-xl">📍</span>
+              </div>
+              <div>
+                <h1 className="text-lg font-bold text-white">Family Hub</h1>
+                <p className="text-white/80 text-sm">Stay connected with loved ones</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Avatar className="w-12 h-12 border-2 border-white/30 shadow-lg">
+                <AvatarImage src={user.profilePicture} />
+                <AvatarFallback className="bg-white/20 text-white font-bold backdrop-blur-sm">
+                  {user.firstName[0]}{user.lastName[0]}
+                </AvatarFallback>
+              </Avatar>
+              
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white hover:bg-white/20 transition-all duration-200">
+                    <User className="w-5 h-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56 bg-card border-border/20 shadow-card">
+                  <DropdownMenuItem className="p-3 hover:bg-secondary/20">
+                    <User className="w-5 h-5 mr-3" />
+                    <span className="font-medium">Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="p-3 hover:bg-secondary/20">
+                    <Settings className="w-5 h-5 mr-3" />
+                    <span className="font-medium">Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-border/30" />
+                  <DropdownMenuItem onClick={handleLogout} className="p-3 text-destructive hover:bg-destructive/20 focus:text-destructive">
+                    <LogOut className="w-5 h-5 mr-3" />
+                    <span className="font-medium">Logout</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-foreground hover:bg-secondary/20 hover:scale-105 transition-all duration-200">
-                <User className="w-6 h-6" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-gradient-card border-border/20 shadow-card">
-              <DropdownMenuItem className="p-3 hover:bg-secondary/20">
-                <User className="w-5 h-5 mr-3" />
-                <span className="font-medium">Profile</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="p-3 hover:bg-secondary/20">
-                <Settings className="w-5 h-5 mr-3" />
-                <span className="font-medium">Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-border/30" />
-              <DropdownMenuItem onClick={handleLogout} className="p-3 text-destructive hover:bg-destructive/20 focus:text-destructive">
-                <LogOut className="w-5 h-5 mr-3" />
-                <span className="font-medium">Logout</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
-      </div>
+      </header>
 
       {/* Main Content */}
       <div className="px-4 py-6 pb-24">

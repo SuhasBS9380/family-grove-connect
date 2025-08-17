@@ -17,8 +17,8 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gradient-card/80 backdrop-blur-xl border-t border-border/20 shadow-card">
-      <div className="flex items-center justify-around px-4 py-3">
+    <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border/20 shadow-lg backdrop-blur-xl bg-opacity-95 z-50">
+      <div className="flex items-center justify-around py-3 px-4">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -31,34 +31,28 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
               size="sm"
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "flex flex-col items-center space-y-2 h-auto py-3 px-4 hover:bg-secondary/20 transition-all duration-300 rounded-xl",
-                isActive && "text-primary",
-                isHome && "relative"
+                "flex flex-col items-center space-y-1 px-3 py-2 rounded-xl transition-all duration-300 hover:scale-110 hover:bg-primary/10",
+                isActive && "text-primary bg-primary/10 shadow-glow animate-scale-in",
+                !isActive && "text-muted-foreground hover:text-foreground",
+                isHome && `h-14 w-14 rounded-full shadow-button ${
+                  isActive 
+                    ? "bg-gradient-primary text-white scale-110 shadow-glow" 
+                    : "bg-primary text-white hover:bg-primary/90"
+                }`,
+                !isHome && "h-12"
               )}
             >
-              {isHome && (
-                <div className={cn(
-                  "absolute -top-6 w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 border-background",
-                  isActive 
-                    ? "bg-gradient-secondary shadow-glow scale-110" 
-                    : "bg-gradient-card shadow-card hover:scale-105"
-                )}>
-                  <Icon className={cn(
-                    "w-7 h-7 transition-all duration-300",
-                    isActive ? "text-primary-foreground" : "text-primary"
-                  )} />
-                </div>
-              )}
-              {!isHome && (
-                <Icon className={cn(
-                  "w-6 h-6 transition-all duration-300",
-                  isActive ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
-                )} />
-              )}
+              <Icon 
+                className={cn(
+                  isHome ? "w-6 h-6" : "w-5 h-5",
+                  "transition-transform duration-200",
+                  isActive && !isHome && "animate-pulse"
+                )} 
+              />
               {!isHome && (
                 <span className={cn(
-                  "text-xs transition-all duration-300 font-medium",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "text-xs font-medium transition-opacity duration-200",
+                  isActive ? "opacity-100" : "opacity-70"
                 )}>
                   {item.label}
                 </span>
