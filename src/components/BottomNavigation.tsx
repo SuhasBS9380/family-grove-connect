@@ -17,8 +17,8 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-gradient-background backdrop-blur-md border-t border-border shadow-lg">
-      <div className="flex items-center justify-around px-4 py-2">
+    <div className="fixed bottom-0 left-0 right-0 bg-gradient-card/80 backdrop-blur-xl border-t border-border/20 shadow-card">
+      <div className="flex items-center justify-around px-4 py-3">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -31,34 +31,34 @@ const BottomNavigation = ({ activeTab, onTabChange }: BottomNavigationProps) => 
               size="sm"
               onClick={() => onTabChange(item.id)}
               className={cn(
-                "flex flex-col items-center space-y-1 h-auto py-2 px-3 hover:bg-accent transition-all duration-200",
+                "flex flex-col items-center space-y-2 h-auto py-3 px-4 hover:bg-secondary/20 transition-all duration-300 rounded-xl",
                 isActive && "text-primary",
                 isHome && "relative"
               )}
             >
               {isHome && (
                 <div className={cn(
-                  "absolute -top-4 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200",
+                  "absolute -top-6 w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 border-4 border-background",
                   isActive 
-                    ? "bg-gradient-primary shadow-button" 
-                    : "bg-gradient-secondary shadow-card"
+                    ? "bg-gradient-secondary shadow-glow scale-110" 
+                    : "bg-gradient-card shadow-card hover:scale-105"
                 )}>
                   <Icon className={cn(
-                    "w-6 h-6 transition-colors duration-200",
+                    "w-7 h-7 transition-all duration-300",
                     isActive ? "text-primary-foreground" : "text-primary"
                   )} />
                 </div>
               )}
               {!isHome && (
                 <Icon className={cn(
-                  "w-5 h-5 transition-colors duration-200",
-                  isActive ? "text-primary" : "text-muted-foreground"
+                  "w-6 h-6 transition-all duration-300",
+                  isActive ? "text-primary scale-110" : "text-muted-foreground hover:text-foreground"
                 )} />
               )}
               {!isHome && (
                 <span className={cn(
-                  "text-xs transition-colors duration-200",
-                  isActive ? "text-primary font-medium" : "text-muted-foreground"
+                  "text-xs transition-all duration-300 font-medium",
+                  isActive ? "text-primary" : "text-muted-foreground"
                 )}>
                   {item.label}
                 </span>

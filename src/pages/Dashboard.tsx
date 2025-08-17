@@ -181,55 +181,58 @@ const Dashboard = () => {
     switch (activeTab) {
       case "home":
         return (
-          <div className="space-y-4">
+          <div className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Family Feed</h2>
-              <Button size="sm" onClick={() => setActiveTab("create-post")}>
+              <h2 className="text-2xl font-bold text-foreground">Family Feed</h2>
+              <Button size="sm" onClick={() => setActiveTab("create-post")} className="bg-gradient-secondary hover:shadow-glow text-primary-foreground font-semibold rounded-xl">
                 <Plus className="w-4 h-4 mr-2" />
                 New Post
               </Button>
             </div>
             
             {posts.length === 0 ? (
-              <Card className="p-8 text-center shadow-card">
-                <p className="text-muted-foreground">No posts yet. Create the first post!</p>
+              <Card className="p-8 text-center shadow-card bg-gradient-card border-border/20">
+                <div className="w-16 h-16 bg-gradient-secondary rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                  <Home className="w-8 h-8 text-primary-foreground" />
+                </div>
+                <p className="text-muted-foreground text-lg">No posts yet. Create the first post!</p>
               </Card>
             ) : (
               <div className="space-y-4">
                 {posts.map((post) => (
-                  <Card key={post._id} className="p-4 shadow-card">
-                    <div className="flex items-start space-x-3 mb-3">
-                      <Avatar className="w-8 h-8">
+                  <Card key={post._id} className="p-6 shadow-card bg-gradient-card border-border/20 hover:shadow-glow transition-all duration-300">
+                    <div className="flex items-start space-x-4 mb-4">
+                      <Avatar className="w-12 h-12 border-2 border-primary/20">
                         <AvatarImage src={post.user.profilePicture} />
-                        <AvatarFallback>
+                        <AvatarFallback className="bg-gradient-secondary text-primary-foreground font-semibold">
                           {post.user.firstName[0]}{post.user.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="font-semibold text-sm">
+                        <p className="font-bold text-foreground">
                           {post.user.firstName} {post.user.lastName}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {new Date(post.createdAt).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     {post.content.text && (
-                      <p className="text-foreground mb-3">{post.content.text}</p>
+                      <p className="text-foreground mb-4 text-lg leading-relaxed">{post.content.text}</p>
                     )}
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex items-center space-x-6 pt-3 border-t border-border/20">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => handleLikePost(post._id)}
-                        className="flex items-center space-x-1"
+                        className="flex items-center space-x-2 hover:bg-primary/10 hover:text-primary rounded-xl"
                       >
-                        <Heart className="w-4 h-4" />
-                        <span>{post.likes.length}</span>
+                        <Heart className="w-5 h-5" />
+                        <span className="font-medium">{post.likes.length}</span>
                       </Button>
-                      <Button variant="ghost" size="sm" className="flex items-center space-x-1">
-                        <MessageSquare className="w-4 h-4" />
-                        <span>{post.comments.length}</span>
+                      <Button variant="ghost" size="sm" className="flex items-center space-x-2 hover:bg-accent/10 hover:text-accent rounded-xl">
+                        <MessageSquare className="w-5 h-5" />
+                        <span className="font-medium">{post.comments.length}</span>
                       </Button>
                     </div>
                   </Card>
@@ -371,44 +374,44 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-background">
+    <div className="min-h-screen bg-gradient-primary">
       {/* Header */}
-      <div className="bg-gradient-primary p-4 shadow-lg">
+      <div className="bg-gradient-card/80 backdrop-blur-xl p-6 shadow-card border-b border-border/20 sticky top-0 z-50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Avatar className="w-10 h-10 border-2 border-primary-foreground">
+          <div className="flex items-center space-x-4">
+            <Avatar className="w-14 h-14 border-3 border-primary/30 shadow-button">
               <AvatarImage src={user.profilePicture} />
-              <AvatarFallback className="bg-primary-light text-primary-dark font-semibold">
+              <AvatarFallback className="bg-gradient-secondary text-primary-foreground font-bold text-lg">
                 {user.firstName[0]}{user.lastName[0]}
               </AvatarFallback>
             </Avatar>
             <div>
-              <p className="text-primary-foreground font-semibold">
+              <p className="text-foreground font-bold text-lg">
                 Hi {user.firstName}! 👋
               </p>
-              <p className="text-primary-foreground/80 text-sm">Welcome to your family</p>
+              <p className="text-muted-foreground text-sm">Welcome to your family</p>
             </div>
           </div>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-primary-light/20">
-                <User className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-12 w-12 rounded-xl text-foreground hover:bg-secondary/20 hover:scale-105 transition-all duration-200">
+                <User className="w-6 h-6" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem>
-                <User className="w-4 h-4 mr-2" />
-                Profile
+            <DropdownMenuContent align="end" className="w-56 bg-gradient-card border-border/20 shadow-card">
+              <DropdownMenuItem className="p-3 hover:bg-secondary/20">
+                <User className="w-5 h-5 mr-3" />
+                <span className="font-medium">Profile</span>
               </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
+              <DropdownMenuItem className="p-3 hover:bg-secondary/20">
+                <Settings className="w-5 h-5 mr-3" />
+                <span className="font-medium">Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout} className="text-destructive focus:text-destructive">
-                <LogOut className="w-4 h-4 mr-2" />
-                Logout
+              <DropdownMenuSeparator className="bg-border/30" />
+              <DropdownMenuItem onClick={handleLogout} className="p-3 text-destructive hover:bg-destructive/20 focus:text-destructive">
+                <LogOut className="w-5 h-5 mr-3" />
+                <span className="font-medium">Logout</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -416,7 +419,7 @@ const Dashboard = () => {
       </div>
 
       {/* Main Content */}
-      <div className="px-4 py-6 pb-20">
+      <div className="px-4 py-6 pb-24">
         {renderContent()}
       </div>
 
