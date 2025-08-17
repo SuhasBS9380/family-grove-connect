@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { authService } from "@/services/authService";
 
 const Login = () => {
   const [mobile, setMobile] = useState("");
@@ -17,34 +18,25 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Temporary login validation (replace with Supabase later)
-    const validCredentials = [
-      { mobile: "9380102924", password: "123456" },
-      { mobile: "9380102923", password: "123456" }
-    ];
-
-    const isValid = validCredentials.some(
-      cred => cred.mobile === mobile && cred.password === password
-    );
-
-    setTimeout(() => {
-      if (isValid) {
+    try {
+      const response = await authService.login(mobile, password);
+      
+      if (response.success) {
         toast({
           title: "Login Successful!",
-          description: "Welcome to your family app",
+          description: response.message,
         });
-        localStorage.setItem("isLoggedIn", "true");
-        localStorage.setItem("userMobile", mobile);
         navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login Failed",
-          description: "Invalid mobile number or password",
-          variant: "destructive",
-        });
       }
+    } catch (error: any) {
+      toast({
+        title: "Login Failed",
+        description: error.response?.data?.message || "An error occurred during login",
+        variant: "destructive",
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -100,7 +92,20 @@ const Login = () => {
 
         <div className="mt-6 text-center">
           <p className="text-sm text-muted-foreground">
-            Test credentials: 9380102924 / 123456
+            Don't have an account? 
+            <Button 
+              variant="link" 
+              className="p-0 h-auto ml-1"
+              onClick={() => navigate("/register")}
+            >
+              Register here
+            </Button>
+          </p>
+        </div>
+
+        <div className="mt-4 text-center">
+          <p className="text-xs text-muted-foreground">
+            Test with any mobile number and password to try the app
           </p>
         </div>
       </Card>

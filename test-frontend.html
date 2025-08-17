@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Frontend API Test</title>
+</head>
+<body>
+    <h1>Frontend API Test</h1>
+    <button onclick="testHealth()">Test Health</button>
+    <button onclick="testLogin()">Test Login</button>
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        const results = document.getElementById('results');
+
+        async function testHealth() {
+            try {
+                results.innerHTML += '<p>Testing health endpoint...</p>';
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                results.innerHTML += `<p>✅ Health: ${JSON.stringify(data)}</p>`;
+            } catch (error) {
+                results.innerHTML += `<p>❌ Health Error: ${error.message}</p>`;
+            }
+        }
+
+        async function testLogin() {
+            try {
+                results.innerHTML += '<p>Testing login endpoint...</p>';
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        mobile: '9380102924',
+                        password: '123456'
+                    })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    results.innerHTML += `<p>✅ Login Success: User ${data.user.firstName}</p>`;
+                } else {
+                    const errorData = await response.json();
+                    results.innerHTML += `<p>❌ Login Failed: ${JSON.stringify(errorData)}</p>`;
+                }
+            } catch (error) {
+                results.innerHTML += `<p>❌ Login Error: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
