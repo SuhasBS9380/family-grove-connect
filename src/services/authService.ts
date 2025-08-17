@@ -6,6 +6,8 @@ export interface User {
   firstName: string;
   lastName: string;
   email?: string;
+  dateOfBirth?: string;
+  gender?: 'male' | 'female' | 'other';
   profilePicture?: string;
   familyId?: string;
   role: 'admin' | 'member';

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Home, MessageCircle, Users, Camera, Calendar, User, Settings, LogOut, Send, Heart, MessageSquare, Plus } from "lucide-react";
 import BottomNavigation from "@/components/BottomNavigation";
+import Profile from "@/components/Profile";
 import { useToast } from "@/hooks/use-toast";
 import { authService, User as UserType } from "@/services/authService";
 import { postsService, Post } from "@/services/postsService";
@@ -156,6 +157,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleUserUpdate = (updatedUser: UserType) => {
+    setUser(updatedUser);
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -184,10 +189,6 @@ const Dashboard = () => {
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-foreground">Family Feed</h2>
-              <Button size="sm" onClick={() => setActiveTab("create-post")} className="bg-gradient-secondary hover:shadow-glow text-primary-foreground font-semibold rounded-xl">
-                <Plus className="w-4 h-4 mr-2" />
-                New Post
-              </Button>
             </div>
             
             {posts.length === 0 ? (
@@ -357,6 +358,14 @@ const Dashboard = () => {
           </div>
         );
 
+      case "profile":
+        return (
+          <Profile 
+            user={user} 
+            onUserUpdate={handleUserUpdate}
+          />
+        );
+
       default:
         return null;
     }
@@ -382,30 +391,26 @@ const Dashboard = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                <span className="text-xl">📍</span>
+                <span className="text-xl">🏠</span>
               </div>
               <div>
-                <h1 className="text-lg font-bold text-white">Family Hub</h1>
+                <h1 className="text-lg font-bold text-white">Avva Mane</h1>
                 <p className="text-white/80 text-sm">Stay connected with loved ones</p>
               </div>
             </div>
             
             <div className="flex items-center space-x-4">
-              <Avatar className="w-12 h-12 border-2 border-white/30 shadow-lg">
-                <AvatarImage src={user.profilePicture} />
-                <AvatarFallback className="bg-white/20 text-white font-bold backdrop-blur-sm">
-                  {user.firstName[0]}{user.lastName[0]}
-                </AvatarFallback>
-              </Avatar>
-              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-white hover:bg-white/20 transition-all duration-200">
-                    <User className="w-5 h-5" />
-                  </Button>
+                  <Avatar className="w-12 h-12 border-2 border-white/30 shadow-lg cursor-pointer hover:border-white/50 transition-all duration-200">
+                    <AvatarImage src={user.profilePicture} />
+                    <AvatarFallback className="bg-white/20 text-white font-bold backdrop-blur-sm">
+                      {user.firstName[0]}{user.lastName[0]}
+                    </AvatarFallback>
+                  </Avatar>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-card border-border/20 shadow-card">
-                  <DropdownMenuItem className="p-3 hover:bg-secondary/20">
+                  <DropdownMenuItem onClick={() => setActiveTab("profile")} className="p-3 hover:bg-secondary/20">
                     <User className="w-5 h-5 mr-3" />
                     <span className="font-medium">Profile</span>
                   </DropdownMenuItem>
@@ -429,6 +434,18 @@ const Dashboard = () => {
       <div className="px-4 py-6 pb-24">
         {renderContent()}
       </div>
+
+      {/* Floating Action Button */}
+      {activeTab === "home" && (
+        <div className="fixed bottom-20 left-4 z-50">
+          <Button 
+            onClick={() => setActiveTab("create-post")}
+            className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-xl hover:shadow-2xl transform hover:scale-110 transition-all duration-300 border-2 border-white"
+          >
+            <Plus className="w-6 h-6 text-white" />
+          </Button>
+        </div>
+      )}
 
       {/* Bottom Navigation */}
       <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
