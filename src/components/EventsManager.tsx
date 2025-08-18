@@ -157,13 +157,16 @@ const EventsManager = ({ user }: EventsManagerProps) => {
     try {
       const response = await eventsService.rsvpEvent(eventId, status);
       if (response.success) {
-        loadEvents(); // Refresh to show updated RSVP
         toast({
           title: "RSVP Updated",
-          description: `You are ${status.replace('_', ' ')} to this event`,
+          description: `You are ${status === 'going' ? 'going' : status === 'maybe' ? 'maybe going' : 'not going'} to this event`,
         });
+        
+        // Reload events to get updated data from backend
+        loadEvents();
       }
     } catch (error) {
+      console.error('RSVP error:', error);
       toast({
         title: "Error",
         description: "Failed to update RSVP",
@@ -207,10 +210,15 @@ const EventsManager = ({ user }: EventsManagerProps) => {
 
   const calculateTimeRemaining = (eventDate: string, eventTime: string) => {
     try {
-      // Handle different date formats
+      // Handle ISO date format from backend
       let eventDateTime;
       
-      if (eventDate.includes('/')) {
+      // Check if eventDate is already an ISO string (from backend)
+      if (eventDate.includes('T') || eventDate.includes('Z')) {
+        // It's an ISO string, parse just the date part and add time
+        const dateOnly = eventDate.split('T')[0];
+        eventDateTime = new Date(`${dateOnly}T${eventTime}`);
+      } else if (eventDate.includes('/')) {
         // Format: MM/DD/YYYY or DD/MM/YYYY
         const [month, day, year] = eventDate.split('/');
         eventDateTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${eventTime}`);
@@ -220,6 +228,12 @@ const EventsManager = ({ user }: EventsManagerProps) => {
       } else {
         // Try to parse as is
         eventDateTime = new Date(`${eventDate}T${eventTime}`);
+      }
+      
+      // Validate the date
+      if (isNaN(eventDateTime.getTime())) {
+        console.error('Invalid date created:', { eventDate, eventTime, eventDateTime });
+        return "Invalid date";
       }
       
       const now = new Date();
@@ -277,7 +291,10 @@ const EventsManager = ({ user }: EventsManagerProps) => {
   };
 
   const getUserRSVP = (event: Event) => {
-    return event.attendees.find(attendee => attendee.user.id === user.id)?.status || 'pending';
+    return event.attendees.find(attendee => {
+      const attendeeUserId = (attendee.user as any)._id || attendee.user.id;
+      return attendeeUserId === user?.id;
+    })?.status || 'pending';
   };
 
   const getAttendeesCounts = (event: Event) => {
@@ -288,7 +305,8 @@ const EventsManager = ({ user }: EventsManagerProps) => {
   };
 
   const canEditEvent = (event: Event) => {
-    const canEdit = event.createdBy.id === user.id || event.createdBy._id === user.id;
+    const createdById = (event.createdBy as any)._id || event.createdBy.id;
+    const canEdit = createdById === user?.id;
     console.log('Can edit event:', {
       eventCreatedBy: event.createdBy,
       currentUser: user,
@@ -447,56 +465,52 @@ const EventsManager = ({ user }: EventsManagerProps) => {
 
             return (
               <Card key={event._id} className={cn(
-                "p-6 shadow-card border-border/20 hover:shadow-glow transition-all duration-300",
-                !isActive && "opacity-75 bg-muted/20"
+                "p-4 shadow-lg border border-blue-200/30 hover:shadow-xl transition-all duration-300 relative overflow-hidden",
+                !isActive && "opacity-75 bg-gray-50/50",
+                "bg-gradient-to-br from-white to-blue-50/30"
               )}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-start space-x-4">
+                {/* Animated Countdown in Top Right */}
+                <div className="absolute top-3 right-3 flex flex-col items-end">
+                  {isActive ? (
+                    <div className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-3 py-1 rounded-full text-xs font-bold shadow-md animate-pulse">
+                      {timeRemaining}
+                    </div>
+                  ) : (
+                    <div className="bg-gray-400 text-white px-3 py-1 rounded-full text-xs font-medium">
+                      Event Ended
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-start justify-between mb-4 mr-20">
+                  <div className="flex items-start space-x-3 flex-1 min-w-0">
                     <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-md",
+                      "w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-md flex-shrink-0",
                       `bg-gradient-to-r ${eventTypeColors[event.eventType as keyof typeof eventTypeColors]}`
                     )}>
-                      <IconComponent className="w-6 h-6" />
+                      <IconComponent className="w-5 h-5" />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="text-xl font-bold text-foreground mb-1">{event.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
-                        <div className="flex items-center space-x-1">
-                          <CalendarIcon className="w-4 h-4" />
-                          <span>{format(new Date(event.eventDate), "MMM dd, yyyy")}</span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-extrabold text-gray-900 mb-1 truncate" style={{fontFamily: 'Poppins, sans-serif'}}>{event.title}</h3>
+                      <div className="flex flex-col space-y-1 text-xs text-gray-600">
+                        <div className="flex items-center space-x-2">
+                          <CalendarIcon className="w-3 h-3 flex-shrink-0" />
+                          <span className="font-medium" style={{fontFamily: 'Inter, sans-serif'}}>{format(new Date(event.eventDate), "MMM dd, yyyy")}</span>
                         </div>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4" />
-                          <span>{event.eventTime}</span>
+                        <div className="flex items-center space-x-2">
+                          <Clock className="w-3 h-3 flex-shrink-0" />
+                          <span className="font-medium" style={{fontFamily: 'Inter, sans-serif'}}>{event.eventTime}</span>
                         </div>
-                        {isActive && (
-                          <div className="flex items-center space-x-1 text-primary font-medium">
-                            <Timer className="w-4 h-4" />
-                            <span>{timeRemaining}</span>
-                          </div>
-                        )}
-                      </div>
-                      {event.location?.address && (
-                        <div className="flex items-center space-x-1 text-sm text-muted-foreground mb-3">
-                          <MapPin className="w-4 h-4" />
-                          <span>{event.location.address}</span>
-                        </div>
-                      )}
-                      {event.description && (
-                        <p className="text-foreground text-sm mb-3">{event.description}</p>
-                      )}
-                      <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                        <span>Hosted by {event.createdBy.firstName} {event.createdBy.lastName}</span>
                       </div>
                     </div>
                   </div>
                   
                   {canEdit && isActive && (
-                    <div className="flex space-x-1">
+                    <div className="flex space-x-1 absolute top-12 right-3">
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-primary/10"
+                        className="h-6 w-6 p-0 hover:bg-blue-100"
                         onClick={() => {
                           setEditingEvent(event);
                           setCreateForm({
@@ -512,28 +526,46 @@ const EventsManager = ({ user }: EventsManagerProps) => {
                           setShowCreateDialog(true);
                         }}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-3 h-3" />
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="h-8 w-8 p-0 hover:bg-destructive/10 hover:text-destructive"
+                        className="h-6 w-6 p-0 hover:bg-red-100 hover:text-red-600"
                         onClick={() => handleDeleteEvent(event._id)}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Trash2 className="w-3 h-3" />
                       </Button>
                     </div>
                   )}
                 </div>
 
-                {/* RSVP Section - Improved voting system */}
-                <div className="border-t border-border/20 pt-4">
+                {event.location?.address && (
+                  <div className="flex items-center space-x-2 text-xs text-gray-600 mb-3">
+                    <MapPin className="w-3 h-3 flex-shrink-0" />
+                    <span className="truncate" style={{fontFamily: 'Inter, sans-serif'}}>{event.location.address}</span>
+                  </div>
+                )}
+
+                {event.description && (
+                  <p className="text-gray-700 text-sm mb-3 line-clamp-2" style={{fontFamily: 'Open Sans, sans-serif'}}>{event.description}</p>
+                )}
+
+                <div className="text-xs text-gray-500 mb-4" style={{fontFamily: 'Roboto, sans-serif'}}>
+                  Hosted by <span className="font-semibold text-blue-600">{event.createdBy.firstName} {event.createdBy.lastName}</span>
+                </div>
+
+                {/* RSVP Section - Enhanced mobile design */}
+                <div className="border-t border-blue-100 pt-4">
                   {isActive && (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-foreground">Will you attend?</h4>
-                        <Badge variant={userRSVP === 'going' ? 'default' : userRSVP === 'maybe' ? 'secondary' : userRSVP === 'not_going' ? 'destructive' : 'outline'}>
-                          {userRSVP === 'going' ? 'Going' : userRSVP === 'maybe' ? 'Maybe' : userRSVP === 'not_going' ? 'Can\'t Go' : 'Not Responded'}
+                        <h4 className="font-bold text-gray-900 text-sm" style={{fontFamily: 'Poppins, sans-serif'}}>Will you attend?</h4>
+                        <Badge 
+                          variant={userRSVP === 'going' ? 'default' : userRSVP === 'maybe' ? 'secondary' : userRSVP === 'not_going' ? 'destructive' : 'outline'}
+                          className="text-xs font-medium"
+                        >
+                          {userRSVP === 'going' ? '✓ Going' : userRSVP === 'maybe' ? '? Maybe' : userRSVP === 'not_going' ? '✗ Can\'t Go' : 'No Response'}
                         </Badge>
                       </div>
                       
@@ -542,113 +574,91 @@ const EventsManager = ({ user }: EventsManagerProps) => {
                           variant={userRSVP === 'going' ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => handleRSVP(event._id, 'going')}
-                          className="flex items-center justify-center gap-1 text-xs"
+                          className="flex items-center justify-center gap-1 text-xs font-semibold h-9 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 border-green-300"
+                          style={{fontFamily: 'Inter, sans-serif'}}
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-3 h-3" />
                           Going
                         </Button>
                         <Button
                           variant={userRSVP === 'maybe' ? 'default' : 'outline'}
                           size="sm"
                           onClick={() => handleRSVP(event._id, 'maybe')}
-                          className="flex items-center justify-center gap-1 text-xs"
+                          className="flex items-center justify-center gap-1 text-xs font-semibold h-9 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-600 hover:to-amber-700 border-yellow-300"
+                          style={{fontFamily: 'Inter, sans-serif'}}
                         >
-                          <HelpCircle className="w-4 h-4" />
+                          <HelpCircle className="w-3 h-3" />
                           Maybe
                         </Button>
                         <Button
                           variant={userRSVP === 'not_going' ? 'destructive' : 'outline'}
                           size="sm"
                           onClick={() => handleRSVP(event._id, 'not_going')}
-                          className="flex items-center justify-center gap-1 text-xs"
+                          className="flex items-center justify-center gap-1 text-xs font-semibold h-9 bg-gradient-to-r from-red-500 to-rose-600 hover:from-red-600 hover:to-rose-700 border-red-300"
+                          style={{fontFamily: 'Inter, sans-serif'}}
                         >
-                          <XCircle className="w-4 h-4" />
+                          <XCircle className="w-3 h-3" />
                           Can't Go
                         </Button>
                       </div>
                     </div>
                   )}
 
-                  {/* Attendee Summary - Always show with better design */}
+                  {/* Simple Attendee Summary */}
                   <div className="space-y-3 mt-4">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex space-x-4">
-                        <span className="text-green-600 font-medium flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" />
-                          {counts.going} Going
-                        </span>
-                        <span className="text-yellow-600 font-medium flex items-center gap-1">
-                          <HelpCircle className="w-3 h-3" />
-                          {counts.maybe} Maybe
-                        </span>
-                        <span className="text-red-600 font-medium flex items-center gap-1">
-                          <XCircle className="w-3 h-3" />
-                          {counts.notGoing} Can't Go
-                        </span>
+                    <div className="text-center">
+                      <div className="text-sm text-gray-600 font-medium mb-2" style={{fontFamily: 'Inter, sans-serif'}}>
+                        {counts.going} Going • {counts.maybe} Maybe • {counts.notGoing} Can't Go
                       </div>
                     </div>
 
-                    {/* Show attendees in a compact, attractive way */}
+                    {/* Simple Attendee Lists */}
                     {event.attendees.length > 0 && (
                       <div className="space-y-2">
-                        {/* Going attendees - show as avatar row */}
+                        {/* Going attendees */}
                         {event.attendees.filter(a => a.status === 'going').length > 0 && (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-green-600 font-medium">Going:</span>
-                            <div className="flex -space-x-2">
+                          <div>
+                            <span className="text-xs font-medium text-gray-700 mr-2" style={{fontFamily: 'Inter, sans-serif'}}>
+                              Going:
+                            </span>
+                            <span className="text-xs text-gray-600" style={{fontFamily: 'Inter, sans-serif'}}>
                               {event.attendees
                                 .filter(a => a.status === 'going')
-                                .slice(0, 5)
-                                .map((attendee) => (
-                                  <Avatar key={attendee.user.id} className="w-6 h-6 border-2 border-background">
-                                    <AvatarImage src={attendee.user.profilePicture} />
-                                    <AvatarFallback className="text-xs bg-green-100 text-green-700">
-                                      {attendee.user.firstName[0]}{attendee.user.lastName[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                              {event.attendees.filter(a => a.status === 'going').length > 5 && (
-                                <div className="w-6 h-6 rounded-full bg-green-100 border-2 border-background flex items-center justify-center text-xs text-green-700 font-medium">
-                                  +{event.attendees.filter(a => a.status === 'going').length - 5}
-                                </div>
-                              )}
-                            </div>
+                                .map(attendee => `${attendee.user.firstName} ${attendee.user.lastName}`)
+                                .join(', ')}
+                            </span>
                           </div>
                         )}
                         
                         {/* Maybe attendees */}
                         {event.attendees.filter(a => a.status === 'maybe').length > 0 && (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-yellow-600 font-medium">Maybe:</span>
-                            <div className="flex -space-x-2">
+                          <div>
+                            <span className="text-xs font-medium text-gray-700 mr-2" style={{fontFamily: 'Inter, sans-serif'}}>
+                              Maybe:
+                            </span>
+                            <span className="text-xs text-gray-600" style={{fontFamily: 'Inter, sans-serif'}}>
                               {event.attendees
                                 .filter(a => a.status === 'maybe')
-                                .slice(0, 5)
-                                .map((attendee) => (
-                                  <Avatar key={attendee.user.id} className="w-6 h-6 border-2 border-background">
-                                    <AvatarImage src={attendee.user.profilePicture} />
-                                    <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700">
-                                      {attendee.user.firstName[0]}{attendee.user.lastName[0]}
-                                    </AvatarFallback>
-                                  </Avatar>
-                                ))}
-                              {event.attendees.filter(a => a.status === 'maybe').length > 5 && (
-                                <div className="w-6 h-6 rounded-full bg-yellow-100 border-2 border-background flex items-center justify-center text-xs text-yellow-700 font-medium">
-                                  +{event.attendees.filter(a => a.status === 'maybe').length - 5}
-                                </div>
-                              )}
-                            </div>
+                                .map(attendee => `${attendee.user.firstName} ${attendee.user.lastName}`)
+                                .join(', ')}
+                            </span>
                           </div>
                         )}
-                      </div>
-                    )}
 
-                    {/* Event status indicator */}
-                    {!isActive && (
-                      <div className="pt-2">
-                        <Badge variant="secondary" className="bg-muted">
-                          Event Ended
-                        </Badge>
+                        {/* Not going attendees */}
+                        {event.attendees.filter(a => a.status === 'not_going').length > 0 && (
+                          <div>
+                            <span className="text-xs font-medium text-gray-700 mr-2" style={{fontFamily: 'Inter, sans-serif'}}>
+                              Can't Go:
+                            </span>
+                            <span className="text-xs text-gray-600" style={{fontFamily: 'Inter, sans-serif'}}>
+                              {event.attendees
+                                .filter(a => a.status === 'not_going')
+                                .map(attendee => `${attendee.user.firstName} ${attendee.user.lastName}`)
+                                .join(', ')}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
