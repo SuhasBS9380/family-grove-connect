@@ -14,7 +14,7 @@ const getBaseURL = () => {
     
     // Check if we're in production (deployed)
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      // Production: use same domain with /api (Vercel serverless functions)
+      // Production: use same domain with /api (works for Render, Vercel, etc.)
       return `${protocol}//${hostname}/api`;
     } else {
       // Development: use different port (your local Express server)

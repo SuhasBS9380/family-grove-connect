@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import os from 'os';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import connectDB from './config/database.js';
 
 // Import routes
@@ -15,6 +17,10 @@ import memoriesRoutes from './routes/memories.js';
 // Load environment variables
 dotenv.config();
 
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // Initialize Express app
 const app = express();
 
@@ -24,7 +30,7 @@ connectDB();
 // Middleware
 app.use(cors({
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://your-production-domain.com'] 
+    ? true  // Allow all origins in production for Render
     : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:8080', 'http://localhost:8081', 'http://localhost:8082'],
   credentials: true
 }));
@@ -49,6 +55,34 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Serve static files from the React app build in production
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../dist');
+  app.use(express.static(distPath));
+  
+  // Handle React routing, return all requests to React app
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+} else {
+  // Development mode - just serve a simple message for non-API routes
+  app.get('/', (req, res) => {
+    res.json({
+      success: true,
+      message: 'Family Grove Connect API Server',
+      environment: 'development',
+      endpoints: {
+        auth: '/api/auth',
+        family: '/api/family',
+        posts: '/api/posts',
+        messages: '/api/messages',
+        events: '/api/events',
+        memories: '/api/memories'
+      }
+    });
+  });
+}
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error('Server Error:', err);
@@ -59,11 +93,11 @@ app.use((err, req, res, next) => {
   });
 });
 
-// 404 handler
-app.use('*', (req, res) => {
+// 404 handler - only for API routes now
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'API route not found'
   });
 });
 

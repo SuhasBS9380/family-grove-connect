@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm install && cd server && npm install && cd .. && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "server": "cd server && npm start",
     "server:dev": "cd server && npm run dev",
     "start": "concurrently \"npm run server:dev\" \"npm run dev\"",
+    "start:prod": "cd server && npm start",
     "install:all": "npm install && cd server && npm install"
   },
   "dependencies": {
