@@ -117,20 +117,37 @@ const EventsManager = ({ user }: EventsManagerProps) => {
         eventDate: selectedDate.toISOString().split('T')[0]
       };
 
-      const response = await eventsService.createEvent(eventData);
-      if (response.success) {
-        setEvents([response.event, ...events]);
-        setShowCreateDialog(false);
-        resetForm();
-        toast({
-          title: "Success",
-          description: "Event created successfully!",
-        });
+      let response;
+      if (editingEvent) {
+        // Update existing event
+        response = await eventsService.updateEvent(editingEvent._id, eventData);
+        if (response.success) {
+          setEvents(events.map(event => 
+            event._id === editingEvent._id ? response.event : event
+          ));
+          toast({
+            title: "Success",
+            description: "Event updated successfully!",
+          });
+        }
+      } else {
+        // Create new event
+        response = await eventsService.createEvent(eventData);
+        if (response.success) {
+          setEvents([response.event, ...events]);
+          toast({
+            title: "Success",
+            description: "Event created successfully!",
+          });
+        }
       }
+
+      setShowCreateDialog(false);
+      resetForm();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to create event",
+        description: editingEvent ? "Failed to update event" : "Failed to create event",
         variant: "destructive",
       });
     }
@@ -189,24 +206,74 @@ const EventsManager = ({ user }: EventsManagerProps) => {
   };
 
   const calculateTimeRemaining = (eventDate: string, eventTime: string) => {
-    const eventDateTime = new Date(`${eventDate}T${eventTime}`);
-    const now = new Date();
-    const diff = eventDateTime.getTime() - now.getTime();
-
-    if (diff <= 0) return "Event ended";
-
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-
-    if (days > 0) return `${days}d ${hours}h`;
-    if (hours > 0) return `${hours}h ${minutes}m`;
-    return `${minutes}m`;
+    try {
+      // Handle different date formats
+      let eventDateTime;
+      
+      if (eventDate.includes('/')) {
+        // Format: MM/DD/YYYY or DD/MM/YYYY
+        const [month, day, year] = eventDate.split('/');
+        eventDateTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${eventTime}`);
+      } else if (eventDate.includes('-')) {
+        // Format: YYYY-MM-DD
+        eventDateTime = new Date(`${eventDate}T${eventTime}`);
+      } else {
+        // Try to parse as is
+        eventDateTime = new Date(`${eventDate}T${eventTime}`);
+      }
+      
+      const now = new Date();
+      const diff = eventDateTime.getTime() - now.getTime();
+      
+      if (diff <= 0) return "Event ended";
+      
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      
+      if (days > 0) return `${days}d ${hours}h`;
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
+    } catch (error) {
+      console.error('Error calculating time remaining:', error, { eventDate, eventTime });
+      return "Time calculation error";
+    }
   };
 
   const isEventActive = (eventDate: string, eventTime: string) => {
-    const eventDateTime = new Date(`${eventDate}T${eventTime}`);
-    return eventDateTime > new Date();
+    try {
+      // Handle different date formats
+      let eventDateTime;
+      
+      if (eventDate.includes('/')) {
+        // Format: MM/DD/YYYY or DD/MM/YYYY
+        const [month, day, year] = eventDate.split('/');
+        eventDateTime = new Date(`${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${eventTime}`);
+      } else if (eventDate.includes('-')) {
+        // Format: YYYY-MM-DD
+        eventDateTime = new Date(`${eventDate}T${eventTime}`);
+      } else {
+        // Try to parse as is
+        eventDateTime = new Date(`${eventDate}T${eventTime}`);
+      }
+      
+      const now = new Date();
+      const isActive = eventDateTime > now;
+      
+      console.log('Event Active Check:', {
+        eventDate,
+        eventTime,
+        eventDateTime: eventDateTime.toISOString(),
+        now: now.toISOString(),
+        isActive
+      });
+      
+      return isActive;
+    } catch (error) {
+      console.error('Error parsing event date:', error, { eventDate, eventTime });
+      // If there's an error parsing, assume it's active to be safe
+      return true;
+    }
   };
 
   const getUserRSVP = (event: Event) => {
@@ -221,7 +288,13 @@ const EventsManager = ({ user }: EventsManagerProps) => {
   };
 
   const canEditEvent = (event: Event) => {
-    return event.createdBy.id === user.id;
+    const canEdit = event.createdBy.id === user.id || event.createdBy._id === user.id;
+    console.log('Can edit event:', {
+      eventCreatedBy: event.createdBy,
+      currentUser: user,
+      canEdit
+    });
+    return canEdit;
   };
 
   if (isLoading) {
@@ -251,7 +324,7 @@ const EventsManager = ({ user }: EventsManagerProps) => {
           </DialogTrigger>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Create New Event</DialogTitle>
+              <DialogTitle>{editingEvent ? 'Edit Event' : 'Create New Event'}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4">
               <div>
@@ -339,7 +412,7 @@ const EventsManager = ({ user }: EventsManagerProps) => {
 
               <div className="flex space-x-2 pt-4">
                 <Button onClick={handleCreateEvent} className="flex-1">
-                  Create Event
+                  {editingEvent ? 'Update Event' : 'Create Event'}
                 </Button>
                 <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
                   Cancel
@@ -420,7 +493,25 @@ const EventsManager = ({ user }: EventsManagerProps) => {
                   
                   {canEdit && isActive && (
                     <div className="flex space-x-1">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-primary/10">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-8 w-8 p-0 hover:bg-primary/10"
+                        onClick={() => {
+                          setEditingEvent(event);
+                          setCreateForm({
+                            title: event.title,
+                            description: event.description || "",
+                            eventDate: event.eventDate,
+                            eventTime: event.eventTime,
+                            location: { address: event.location?.address || "" },
+                            eventType: event.eventType,
+                            images: event.images || []
+                          });
+                          setSelectedDate(new Date(event.eventDate));
+                          setShowCreateDialog(true);
+                        }}
+                      >
                         <Edit className="w-4 h-4" />
                       </Button>
                       <Button 
@@ -435,89 +526,133 @@ const EventsManager = ({ user }: EventsManagerProps) => {
                   )}
                 </div>
 
-                {/* RSVP Section */}
-                {isActive && (
-                  <div className="border-t border-border/20 pt-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-semibold text-foreground">Your Response</h4>
-                      <Badge variant={userRSVP === 'going' ? 'default' : userRSVP === 'maybe' ? 'secondary' : userRSVP === 'not_going' ? 'destructive' : 'outline'}>
-                        {userRSVP === 'going' ? 'Going' : userRSVP === 'maybe' ? 'Maybe' : userRSVP === 'not_going' ? 'Not Going' : 'Pending'}
-                      </Badge>
-                    </div>
-                    
-                    <div className="flex space-x-2 mb-4">
-                      <Button
-                        variant={userRSVP === 'going' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleRSVP(event._id, 'going')}
-                        className="flex-1"
-                      >
-                        <CheckCircle className="w-4 h-4 mr-1" />
-                        Going
-                      </Button>
-                      <Button
-                        variant={userRSVP === 'maybe' ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => handleRSVP(event._id, 'maybe')}
-                        className="flex-1"
-                      >
-                        <HelpCircle className="w-4 h-4 mr-1" />
-                        Maybe
-                      </Button>
-                      <Button
-                        variant={userRSVP === 'not_going' ? 'destructive' : 'outline'}
-                        size="sm"
-                        onClick={() => handleRSVP(event._id, 'not_going')}
-                        className="flex-1"
-                      >
-                        <XCircle className="w-4 h-4 mr-1" />
-                        Can't Go
-                      </Button>
-                    </div>
-
-                    {/* Attendee Summary */}
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex space-x-4">
-                        <span className="text-green-600 font-medium">{counts.going} Going</span>
-                        <span className="text-yellow-600 font-medium">{counts.maybe} Maybe</span>
-                        <span className="text-red-600 font-medium">{counts.notGoing} Can't Go</span>
+                {/* RSVP Section - Improved voting system */}
+                <div className="border-t border-border/20 pt-4">
+                  {isActive && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-foreground">Will you attend?</h4>
+                        <Badge variant={userRSVP === 'going' ? 'default' : userRSVP === 'maybe' ? 'secondary' : userRSVP === 'not_going' ? 'destructive' : 'outline'}>
+                          {userRSVP === 'going' ? 'Going' : userRSVP === 'maybe' ? 'Maybe' : userRSVP === 'not_going' ? 'Can\'t Go' : 'Not Responded'}
+                        </Badge>
                       </div>
                       
-                      {/* Show attending members */}
-                      {event.attendees.filter(a => a.status === 'going').length > 0 && (
-                        <div className="flex items-center space-x-1">
-                          <span className="text-muted-foreground">Going:</span>
-                          <div className="flex -space-x-1">
-                            {event.attendees
-                              .filter(a => a.status === 'going')
-                              .slice(0, 3)
-                              .map((attendee) => (
-                                <Avatar key={attendee.user.id} className="w-6 h-6 border-2 border-background">
-                                  <AvatarImage src={attendee.user.profilePicture} />
-                                  <AvatarFallback className="text-xs">
-                                    {attendee.user.firstName[0]}{attendee.user.lastName[0]}
-                                  </AvatarFallback>
-                                </Avatar>
-                              ))}
-                            {event.attendees.filter(a => a.status === 'going').length > 3 && (
-                              <div className="w-6 h-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
-                                +{event.attendees.filter(a => a.status === 'going').length - 3}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button
+                          variant={userRSVP === 'going' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleRSVP(event._id, 'going')}
+                          className="flex items-center justify-center gap-1 text-xs"
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                          Going
+                        </Button>
+                        <Button
+                          variant={userRSVP === 'maybe' ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => handleRSVP(event._id, 'maybe')}
+                          className="flex items-center justify-center gap-1 text-xs"
+                        >
+                          <HelpCircle className="w-4 h-4" />
+                          Maybe
+                        </Button>
+                        <Button
+                          variant={userRSVP === 'not_going' ? 'destructive' : 'outline'}
+                          size="sm"
+                          onClick={() => handleRSVP(event._id, 'not_going')}
+                          className="flex items-center justify-center gap-1 text-xs"
+                        >
+                          <XCircle className="w-4 h-4" />
+                          Can't Go
+                        </Button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {!isActive && (
-                  <div className="border-t border-border/20 pt-4">
-                    <Badge variant="secondary" className="bg-muted">
-                      Event Ended
-                    </Badge>
+                  {/* Attendee Summary - Always show with better design */}
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-center justify-between text-sm">
+                      <div className="flex space-x-4">
+                        <span className="text-green-600 font-medium flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" />
+                          {counts.going} Going
+                        </span>
+                        <span className="text-yellow-600 font-medium flex items-center gap-1">
+                          <HelpCircle className="w-3 h-3" />
+                          {counts.maybe} Maybe
+                        </span>
+                        <span className="text-red-600 font-medium flex items-center gap-1">
+                          <XCircle className="w-3 h-3" />
+                          {counts.notGoing} Can't Go
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Show attendees in a compact, attractive way */}
+                    {event.attendees.length > 0 && (
+                      <div className="space-y-2">
+                        {/* Going attendees - show as avatar row */}
+                        {event.attendees.filter(a => a.status === 'going').length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-green-600 font-medium">Going:</span>
+                            <div className="flex -space-x-2">
+                              {event.attendees
+                                .filter(a => a.status === 'going')
+                                .slice(0, 5)
+                                .map((attendee) => (
+                                  <Avatar key={attendee.user.id} className="w-6 h-6 border-2 border-background">
+                                    <AvatarImage src={attendee.user.profilePicture} />
+                                    <AvatarFallback className="text-xs bg-green-100 text-green-700">
+                                      {attendee.user.firstName[0]}{attendee.user.lastName[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                              {event.attendees.filter(a => a.status === 'going').length > 5 && (
+                                <div className="w-6 h-6 rounded-full bg-green-100 border-2 border-background flex items-center justify-center text-xs text-green-700 font-medium">
+                                  +{event.attendees.filter(a => a.status === 'going').length - 5}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Maybe attendees */}
+                        {event.attendees.filter(a => a.status === 'maybe').length > 0 && (
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm text-yellow-600 font-medium">Maybe:</span>
+                            <div className="flex -space-x-2">
+                              {event.attendees
+                                .filter(a => a.status === 'maybe')
+                                .slice(0, 5)
+                                .map((attendee) => (
+                                  <Avatar key={attendee.user.id} className="w-6 h-6 border-2 border-background">
+                                    <AvatarImage src={attendee.user.profilePicture} />
+                                    <AvatarFallback className="text-xs bg-yellow-100 text-yellow-700">
+                                      {attendee.user.firstName[0]}{attendee.user.lastName[0]}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                ))}
+                              {event.attendees.filter(a => a.status === 'maybe').length > 5 && (
+                                <div className="w-6 h-6 rounded-full bg-yellow-100 border-2 border-background flex items-center justify-center text-xs text-yellow-700 font-medium">
+                                  +{event.attendees.filter(a => a.status === 'maybe').length - 5}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Event status indicator */}
+                    {!isActive && (
+                      <div className="pt-2">
+                        <Badge variant="secondary" className="bg-muted">
+                          Event Ended
+                        </Badge>
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
               </Card>
             );
           })}
