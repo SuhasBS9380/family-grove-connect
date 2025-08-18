@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile Access - Family Grove Connect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .qr-container {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .qr-code {
+            margin: 20px 0;
+        }
+        .url {
+            color: #333;
+            font-weight: bold;
+            font-size: 16px;
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            word-break: break-all;
+        }
+        h1 {
+            margin-bottom: 30px;
+        }
+        .instructions {
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📱 Access Your App on Mobile</h1>
+    
+    <div class="instructions">
+        <h3>🔗 Direct URLs (Type in mobile browser):</h3>
+        <div class="qr-container">
+            <div class="url">http://192.168.59.1:8081/</div>
+            <div class="url">http://192.168.141.1:8081/</div>
+            <div class="url">http://10.17.188.232:8081/</div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>📱 QR Codes - Scan with your phone camera:</h3>
+        
+        <div class="qr-container">
+            <h4>Primary Network (192.168.59.1)</h4>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://192.168.59.1:8081/" alt="QR Code for 192.168.59.1:8081">
+            </div>
+            <div class="url">http://192.168.59.1:8081/</div>
+        </div>
+
+        <div class="qr-container">
+            <h4>Secondary Network (192.168.141.1)</h4>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://192.168.141.1:8081/" alt="QR Code for 192.168.141.1:8081">
+            </div>
+            <div class="url">http://192.168.141.1:8081/</div>
+        </div>
+
+        <div class="qr-container">
+            <h4>WiFi Network (10.17.188.232)</h4>
+            <div class="qr-code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://10.17.188.232:8081/" alt="QR Code for 10.17.188.232:8081">
+            </div>
+            <div class="url">http://10.17.188.232:8081/</div>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>📋 Instructions:</h3>
+        <ol style="text-align: left; max-width: 400px; margin: 0 auto;">
+            <li>Make sure your phone is on the same WiFi network as your computer</li>
+            <li><strong>Option A:</strong> Scan any QR code above with your phone camera</li>
+            <li><strong>Option B:</strong> Type any URL above in your mobile browser</li>
+            <li>Your Family Grove Connect app will open on mobile! 🎉</li>
+        </ol>
+    </div>
+
+    <div class="instructions">
+        <p><strong>💡 Pro Tip:</strong> Bookmark the URL on your phone for easy access!</p>
+    </div>
+</body>
+</html>

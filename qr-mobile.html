@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mobile Access QR Code</title>
+    <style>
+        body { text-align: center; padding: 50px; font-family: Arial; }
+        .qr { margin: 20px; }
+        .url { font-size: 18px; font-weight: bold; margin: 10px; }
+    </style>
+</head>
+<body>
+    <h1>📱 Scan QR Code to Access Your App</h1>
+    
+    <div class="qr">
+        <h3>Primary Network Address</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=http://10.168.14.146:8081/" alt="QR Code">
+        <div class="url">http://10.168.14.146:8081/</div>
+    </div>
+    
+    <div class="qr">
+        <h3>Alternative Network Address</h3>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=http://192.168.59.1:8081/" alt="QR Code">
+        <div class="url">http://192.168.59.1:8081/</div>
+    </div>
+    
+    <h3>📋 Instructions:</h3>
+    <ol style="text-align: left; max-width: 500px; margin: 0 auto;">
+        <li>Make sure your phone and desktop are on the same network</li>
+        <li>Scan any QR code above with your phone camera</li>
+        <li>Or manually type the URL in your phone browser</li>
+        <li>Your Family Grove Connect app will open! 🎉</li>
+    </ol>
+</body>
+</html>

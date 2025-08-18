@@ -1,116 +1,52 @@
-import { mockApiService } from './mockApi';
+import axios from 'axios';
 
-// Mock API client that simulates axios requests using localStorage
-const api = {
-  async post(url: string, data: any) {
-    try {
-      let result;
-      
-      if (url === '/auth/login') {
-        result = await mockApiService.login(data.mobile, data.password);
-      } else if (url === '/auth/register') {
-        result = await mockApiService.register(data);
-      } else {
-        throw new Error(`Endpoint ${url} not implemented`);
-      }
-
-      return { data: result };
-    } catch (error: any) {
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: error.message
-          }
-        }
-      };
-    }
-  },
-
-  async get(url: string) {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No auth token');
-      }
-
-      let result;
-      
-      if (url === '/auth/profile') {
-        result = await mockApiService.getProfile(token);
-      } else {
-        throw new Error(`Endpoint ${url} not implemented`);
-      }
-
-      return { data: result };
-    } catch (error: any) {
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: error.message
-          },
-          status: 401
-        }
-      };
-    }
-  },
-
-  async put(url: string, data?: any) {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No auth token');
-      }
-
-      let result;
-      
-      if (url === '/auth/profile') {
-        result = await mockApiService.updateProfile(token, data);
-      } else {
-        throw new Error(`Endpoint ${url} not implemented`);
-      }
-
-      return { data: result };
-    } catch (error: any) {
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: error.message
-          },
-          status: 401
-        }
-      };
-    }
-  },
-
-  async delete(url: string) {
-    try {
-      const token = localStorage.getItem('authToken');
-      if (!token) {
-        throw new Error('No auth token');
-      }
-
-      // Mock delete operations
-      return { 
-        data: { 
-          success: true, 
-          message: 'Delete operation successful' 
-        } 
-      };
-    } catch (error: any) {
-      throw {
-        response: {
-          data: {
-            success: false,
-            message: error.message
-          },
-          status: 401
-        }
-      };
-    }
+// Get the current host for API calls (works for both localhost and mobile)
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // In browser, use current host but different port
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    return `${protocol}//${hostname}:5001/api`;
   }
+  return 'http://localhost:5001/api';
 };
+
+// Create axios instance with base configuration
+const api = axios.create({
+  baseURL: getBaseURL(),
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor to add auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Response interceptor to handle auth errors
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Token expired or invalid
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('isLoggedIn');
+      localStorage.removeItem('userMobile');
+      window.location.href = '/';
+    }
+    return Promise.reject(error);
+  }
+);
 
 export default api;
