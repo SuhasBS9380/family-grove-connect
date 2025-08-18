@@ -1,0 +1,14 @@
+# Build settings for Netlify
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# Redirect all routes to index.html for React Router
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# Environment variables for build
+[build.environment]
+  NODE_ENV = "production"
