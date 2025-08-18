@@ -22,25 +22,32 @@ export default async function handler(req, res) {
   await connectDB();
 
   // Extract path from URL
-  const path = req.url.split('?')[0].replace('/api/', '');
-  const pathParts = path.split('/');
+  const path = req.url.split('?')[0];
+  console.log('API Request path:', path); // Debug log
+  
+  // Remove /api prefix if present
+  const cleanPath = path.startsWith('/api/') ? path.substring(5) : path.substring(1);
+  const pathParts = cleanPath.split('/');
+  
+  console.log('Clean path:', cleanPath, 'Path parts:', pathParts); // Debug log
 
   try {
     // Route based on path
-    if (path.startsWith('auth/')) {
+    if (cleanPath.startsWith('auth/')) {
       return await handleAuth(req, res, pathParts);
-    } else if (path.startsWith('posts')) {
+    } else if (cleanPath.startsWith('posts')) {
       return await handlePosts(req, res, pathParts);
-    } else if (path.startsWith('messages')) {
+    } else if (cleanPath.startsWith('messages')) {
       return await handleMessages(req, res, pathParts);
-    } else if (path.startsWith('events')) {
+    } else if (cleanPath.startsWith('events')) {
       return await handleEvents(req, res, pathParts);
-    } else if (path.startsWith('family')) {
+    } else if (cleanPath.startsWith('family')) {
       return await handleFamily(req, res, pathParts);
-    } else if (path === 'health') {
+    } else if (cleanPath === 'health') {
       return res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
     } else {
-      return res.status(404).json({ success: false, message: 'Endpoint not found' });
+      console.log('No route matched for path:', cleanPath); // Debug log
+      return res.status(404).json({ success: false, message: 'Endpoint not found', path: cleanPath });
     }
   } catch (error) {
     console.error('API Error:', error);
@@ -51,25 +58,39 @@ export default async function handler(req, res) {
 // Auth handlers
 async function handleAuth(req, res, pathParts) {
   const endpoint = pathParts[1]; // auth/login -> 'login'
+  console.log('Auth endpoint:', endpoint, 'Method:', req.method); // Debug log
 
   if (endpoint === 'login' && req.method === 'POST') {
-    const { mobile, password } = req.body;
+    try {
+      const { mobile, password } = req.body;
+      console.log('Login attempt for mobile:', mobile); // Debug log
 
-    const user = await User.findOne({ mobile }).select('+password');
-    if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      if (!mobile || !password) {
+        return res.status(400).json({ success: false, message: 'Mobile and password are required' });
+      }
+
+      const user = await User.findOne({ mobile }).select('+password');
+      if (!user) {
+        console.log('User not found for mobile:', mobile); // Debug log
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+      if (!isMatch) {
+        console.log('Password mismatch for mobile:', mobile); // Debug log
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+      const userResponse = user.toObject();
+      delete userResponse.password;
+
+      console.log('Login successful for mobile:', mobile); // Debug log
+      return res.status(200).json({ success: true, message: 'Login successful', token, user: userResponse });
+    } catch (error) {
+      console.error('Login error:', error);
+      return res.status(500).json({ success: false, message: 'Login failed due to server error' });
     }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    const userResponse = user.toObject();
-    delete userResponse.password;
-
-    return res.status(200).json({ success: true, message: 'Login successful', token, user: userResponse });
   }
 
   if (endpoint === 'register' && req.method === 'POST') {
