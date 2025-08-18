@@ -20,6 +20,7 @@ import { authService, User as UserType } from "@/services/authService";
 import { postsService, Post } from "@/services/postsService";
 import { messagesService, Message } from "@/services/messagesService";
 import { eventsService, Event } from "@/services/eventsService";
+import EventsManager from "@/components/EventsManager";
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -333,30 +334,7 @@ const Dashboard = () => {
         );
 
       case "events":
-        return (
-          <div className="space-y-4">
-            <h2 className="text-xl font-bold text-foreground">Events</h2>
-            {events.length === 0 ? (
-              <Card className="p-8 text-center shadow-card">
-                <p className="text-muted-foreground">No upcoming events</p>
-              </Card>
-            ) : (
-              <div className="space-y-4">
-                {events.map((event) => (
-                  <Card key={event._id} className="p-4 shadow-card">
-                    <h3 className="font-semibold">{event.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {new Date(event.eventDate).toLocaleDateString()} at {event.eventTime}
-                    </p>
-                    {event.description && (
-                      <p className="text-sm mt-2">{event.description}</p>
-                    )}
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-        );
+        return <EventsManager user={user} />;
 
       case "profile":
         return (
