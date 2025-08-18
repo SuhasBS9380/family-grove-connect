@@ -61,7 +61,7 @@ export const postsService = {
     likesCount: number;
     isLiked: boolean;
   }> {
-    const response = await api.post(`/posts/${postId}/like`);
+    const response = await api.post(`/posts/${postId}/like`, {});
     return response.data;
   },
 

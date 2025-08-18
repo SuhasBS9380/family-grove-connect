@@ -40,7 +40,7 @@ export const familyService = {
     success: boolean;
     message: string;
   }> {
-    const response = await api.post('/family/leave');
+    const response = await api.post('/family/leave', {});
     return response.data;
   }
 };
