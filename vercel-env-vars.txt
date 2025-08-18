@@ -1,0 +1,5 @@
+# Add this to your Vercel environment variables
+VITE_API_URL=https://your-railway-app-name.railway.app/api
+
+# Example:
+# VITE_API_URL=https://family-grove-backend-production.railway.app/api

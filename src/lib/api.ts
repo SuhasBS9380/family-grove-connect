@@ -1,12 +1,25 @@
 import axios from 'axios';
 
-// Get the current host for API calls (works for both localhost and mobile)
+// Get the current host for API calls (works for both localhost and production)
 const getBaseURL = () => {
+  // Check for environment variable first (Vite uses VITE_ prefix)
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
   if (typeof window !== 'undefined') {
-    // In browser, use current host but different port
+    // In browser
     const protocol = window.location.protocol;
     const hostname = window.location.hostname;
-    return `${protocol}//${hostname}:5001/api`;
+    
+    // Check if we're in production (deployed)
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      // Production: use same domain with /api (Vercel serverless functions)
+      return `${protocol}//${hostname}/api`;
+    } else {
+      // Development: use different port (your local Express server)
+      return `${protocol}//${hostname}:5001/api`;
+    }
   }
   return 'http://localhost:5001/api';
 };

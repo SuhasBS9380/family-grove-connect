@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Deployment Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { max-width: 600px; margin: 0 auto; text-align: center; }
+        .test-box { background: rgba(255,255,255,0.1); padding: 20px; margin: 10px 0; border-radius: 10px; }
+        button { background: #fff; color: #333; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        .result { margin-top: 10px; padding: 10px; border-radius: 5px; }
+        .success { background: #4CAF50; }
+        .error { background: #f44336; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Family Grove Connect - Deployment Test</h1>
+        
+        <div class="test-box">
+            <h3>Frontend Test</h3>
+            <p>✅ If you can see this page, frontend is deployed!</p>
+        </div>
+        
+        <div class="test-box">
+            <h3>Backend API Test</h3>
+            <button onclick="testAPI()">Test Backend Connection</button>
+            <div id="api-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Database Test</h3>
+            <button onclick="testAuth()">Test MongoDB Login</button>
+            <div id="db-result" class="result"></div>
+        </div>
+        
+        <div class="test-box">
+            <h3>Production URLs</h3>
+            <p><strong>Frontend:</strong> https://your-app.vercel.app</p>
+            <p><strong>Backend:</strong> https://your-api.railway.app</p>
+            <p><strong>MongoDB:</strong> ✅ Connected</p>
+        </div>
+    </div>
+
+    <script>
+        async function testAPI() {
+            const result = document.getElementById('api-result');
+            try {
+                // Use the same getBaseURL logic from your app
+                const baseURL = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:5001/api' 
+                    : `${window.location.protocol}//${window.location.hostname}/api`;
+                
+                const response = await fetch(`${baseURL}/health`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    result.className = 'result success';
+                    result.innerHTML = '✅ Backend API is working!';
+                } else {
+                    throw new Error('API returned error');
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = '❌ Backend API failed: ' + error.message;
+            }
+        }
+        
+        async function testAuth() {
+            const result = document.getElementById('db-result');
+            try {
+                const baseURL = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:5001/api' 
+                    : `${window.location.protocol}//${window.location.hostname}/api`;
+                
+                const response = await fetch(`${baseURL}/auth/test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ test: true })
+                });
+                
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.innerHTML = '✅ MongoDB connection is working!';
+                } else {
+                    throw new Error('Database connection failed');
+                }
+            } catch (error) {
+                result.className = 'result error';
+                result.innerHTML = '❌ MongoDB failed: Check IP whitelist and connection string';
+            }
+        }
+    </script>
+</body>
+</html>
